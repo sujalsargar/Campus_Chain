@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<title>CampusChain Admin Dashboard</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Admin Dashboard</h2>
+
+<button onclick="loadUsers()">View Users</button> <button onclick="loadTransactions()">View Transactions</button> <button onclick="openGraph()">View Transaction Network</button>
+
+<hr>
+
+<div class="section">
+<h3>Users</h3>
+<div id="users"></div>
+</div>
+
+<div class="section">
+<h3>Transactions</h3>
+<div id="transactions"></div>
+</div>
+
+</div>
+
+<script>
+
+const API_BASE = "http://localhost:5000/api/admin";
+
+async function loadUsers(){
+
+try{
+
+document.getElementById("users").innerHTML = "Loading users...";
+
+let res = await fetch(`${API_BASE}/users`);
+
+let data = await res.json();
+
+console.log("Users:",data);
+
+let html="";
+
+data.forEach(u=>{
+
+html += `
+<div class="card">
+<b>User:</b> ${u.name} <br>
+<b>Balance:</b> ${u.balance} <br>
+<b>Risk Score:</b> ${u.riskScore}
+</div>
+`;
+
+});
+
+document.getElementById("users").innerHTML = html;
+
+}catch(err){
+
+console.error(err);
+document.getElementById("users").innerHTML="Error loading users";
+
+}
+
+}
+
+
+
+async function loadTransactions(){
+
+try{
+
+document.getElementById("transactions").innerHTML = "Loading transactions...";
+
+let res = await fetch(`${API_BASE}/transactions`);
+
+let data = await res.json();
+
+console.log("Transactions:",data);
+
+let html="";
+
+data.forEach(t=>{
+
+html += `
+<div class="card">
+Sender ${t.sender} → Receiver ${t.receiver} <br>
+Amount: ${t.amount} <br>
+Time: ${new Date(t.timestamp).toLocaleString()}
+</div>
+`;
+
+});
+
+document.getElementById("transactions").innerHTML = html;
+
+}catch(err){
+
+console.error(err);
+document.getElementById("transactions").innerHTML="Error loading transactions";
+
+}
+
+}
+
+
+
+function openGraph(){
+
+window.open("transaction_graph.html");
+
+}
+
+</script>
+
+</body>
+</html>

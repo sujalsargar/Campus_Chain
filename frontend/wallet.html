@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>CampusChain Wallet</title>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f6f9;
+margin:0;
+}
+
+.header{
+background:#007bff;
+color:white;
+padding:15px 25px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+padding:30px;
+}
+
+.card{
+background:white;
+padding:25px;
+margin-bottom:25px;
+border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+h3{
+margin-top:0;
+}
+
+.balance{
+font-size:30px;
+color:#007bff;
+margin:10px 0;
+}
+
+input{
+width:100%;
+padding:10px;
+margin:8px 0;
+border:1px solid #ccc;
+border-radius:5px;
+}
+
+button{
+padding:10px 15px;
+background:#007bff;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#0056b3;
+}
+
+.logout{
+background:#dc3545;
+}
+
+.logout:hover{
+background:#b02a37;
+}
+
+.success{
+color:green;
+}
+
+.error{
+color:red;
+}
+
+.qr{
+text-align:center;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h2>CampusChain Wallet</h2>
+
+<button class="logout" onclick="logout()">Logout</button>
+
+</div>
+
+
+<div class="container">
+
+
+<!-- WALLET BALANCE -->
+
+<div class="card">
+
+<h3>Wallet Balance</h3>
+
+<div class="balance" id="balance">--</div>
+
+<p id="risk"></p>
+
+<button onclick="loadWallet()">Refresh Balance</button>
+
+</div>
+
+
+
+<!-- SEND TOKENS -->
+
+<div class="card">
+
+<h3>Send Tokens</h3>
+
+<input id="receiver" placeholder="Receiver User ID">
+
+<input id="amount" placeholder="Amount">
+
+<button onclick="sendTokens()">Send Tokens</button>
+
+<p id="sendMsg"></p>
+
+</div>
+
+
+
+<!-- ADD TOKENS -->
+
+<div class="card">
+
+<h3>Add Tokens (Demo)</h3>
+
+<input id="addAmount" placeholder="Amount">
+
+<button onclick="addTokens()">Add Tokens</button>
+
+<p id="addMsg"></p>
+
+</div>
+
+
+
+<!-- QR CODE -->
+
+<div class="card qr">
+
+<h3>Receive Payment</h3>
+
+<canvas id="qrcode"></canvas>
+
+<button onclick="generateQR()">Generate QR</button>
+
+</div>
+
+
+</div>
+
+
+<script>
+
+const API="http://localhost:5000/api"
+
+let userId=localStorage.getItem("userId")
+
+if(!userId){
+
+alert("Please login first")
+window.location.href="login.html"
+
+}
+
+
+
+async function loadWallet(){
+
+let res=await fetch(API+"/wallet/"+userId)
+let data=await res.json()
+
+document.getElementById("balance").innerText=data.balance+" Tokens"
+document.getElementById("risk").innerText="Risk Score: "+data.riskScore
+
+}
+
+
+
+async function sendTokens(){
+
+let receiver=document.getElementById("receiver").value
+let amount=document.getElementById("amount").value
+
+if(!receiver || !amount){
+
+document.getElementById("sendMsg").innerHTML="<span class='error'>Enter receiver and amount</span>"
+return
+
+}
+
+let res=await fetch(API+"/transaction/send",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+senderId:userId,
+receiverId:receiver,
+amount:amount
+
+})
+
+})
+
+let data=await res.json()
+
+if(data.warning){
+
+document.getElementById("sendMsg").innerHTML="<span class='error'>"+data.warning+"</span>"
+
+}else{
+
+document.getElementById("sendMsg").innerHTML="<span class='success'>Transaction Successful</span>"
+
+}
+
+document.getElementById("receiver").value=""
+document.getElementById("amount").value=""
+
+loadWallet()
+
+}
+
+
+
+async function addTokens(){
+
+let amount=document.getElementById("addAmount").value
+
+if(!amount){
+
+document.getElementById("addMsg").innerHTML="<span class='error'>Enter amount</span>"
+return
+
+}
+
+let res=await fetch(API+"/wallet/add",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+userId:userId,
+amount:amount
+})
+
+})
+
+let data=await res.json()
+
+document.getElementById("addMsg").innerHTML="<span class='success'>Tokens Added</span>"
+
+document.getElementById("addAmount").value=""
+
+await loadWallet()
+
+}
+
+
+
+function generateQR(){
+
+let url="campuspay://send?receiver="+userId
+
+QRCode.toCanvas(document.getElementById("qrcode"),url)
+
+}
+
+
+
+function logout(){
+
+localStorage.removeItem("userId")
+window.location.href="login.html"
+
+}
+
+
+
+loadWallet()
+
+</script>
+
+</body>
+</html>
